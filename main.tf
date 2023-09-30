@@ -187,7 +187,7 @@ resource "aws_lb_listener_rule" "flask_app" {
 resource "aws_cloudwatch_metric_alarm" "requests_up_alarm" {
   alarm_name          = "requests-up-alarm"
   comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = 1
+  evaluation_periods  = 3
   metric_name         = "RequestCount"  # The metric name for an ELB request count
   namespace           = "AWS/ApplicationELB"       # The default namespace for ELB metrics
   period              = 60              # 1-minute period
@@ -204,7 +204,7 @@ resource "aws_cloudwatch_metric_alarm" "requests_up_alarm" {
 resource "aws_cloudwatch_metric_alarm" "requests_down_alarm" {
   alarm_name          = "requests-down-alarm"
   comparison_operator = "LessThanThreshold"
-  evaluation_periods  = 1
+  evaluation_periods  = 3
   metric_name         = "RequestCount"  # The metric name for an ELB request count
   namespace           = "AWS/ApplicationELB"       # The default namespace for ELB metrics
   period              = 60              # 1-minute period
@@ -228,7 +228,7 @@ resource "aws_autoscaling_policy" "scale_up_policy" {
 
 resource "aws_autoscaling_policy" "scale_down_policy" {
   name                   = "scale-down-policy"
-  scaling_adjustment     = -1 # Increase desired capacity by 1 instance/container
+  scaling_adjustment     = -1 # Decrease desired capacity by 1 instance/container
   adjustment_type        = "ChangeInCapacity"
   cooldown               = 300 # Cooldown period in seconds
   autoscaling_group_name = aws_autoscaling_group.flask_app_asg.name
