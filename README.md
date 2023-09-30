@@ -3,6 +3,17 @@ A simple flask app that can be deployed to AWS using Terraform and Docker. SQLit
 
 Make sure you've installed terraform and you've copied the AWS CLI credentials to '~/.aws/credentials' before running
 
+## Some Notes
+
+### Auto scaling when requests are more than 10 in a minute, runs for 3 times(can go from min 2 to max 5 instances) if requests remain high 
+### Down scaling when requests are less than 10 in a minute, runs for 3 times(can go from max 5 to min 2 instances) if requests remain low 
+### Access credentials used locally had administration access for the user(but potentially apart from ec2, load balancer, auto scaling groups and stuff, dynamodb access should suffice)
+### Issue with no sql database was that each instance have its own copy and therefore their own data and we see different results on each get request
+### Extra feature: Did not implement all DynamoDB Apis but a dummy API(/api/v1/users/dynamo) is implemented to show connectivity to dynamoDb works by adding sample values and sending them back
+### IAM group configured to allow direct access to dynamoDb without having to manually set any credentials minimizing security risks(like not uploading access_token in repo)
+
+
+
 Steps to run:
 - `terraform init`
 - `terraform apply`
