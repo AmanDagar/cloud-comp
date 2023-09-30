@@ -197,7 +197,7 @@ resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
   actions_enabled     = true
   alarm_actions       = [aws_autoscaling_policy.scale_up_policy.arn]
   dimensions = {
-    LoadBalancerName      = aws_lb.flask_app_lb.name
+    LoadBalancerName      = aws_lb.flask_app_lb.arn
   }
 }
 
