@@ -188,7 +188,7 @@ resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
   alarm_name          = "requests-alarm"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
-  metric_name         = "Requests"  # The metric name for an ELB request count
+  metric_name         = "RequestCount"  # The metric name for an ELB request count
   namespace           = "AWS/ELB"       # The default namespace for ELB metrics
   period              = 60              # 1-minute period
   statistic           = "Sum"
