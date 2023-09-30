@@ -191,7 +191,7 @@ resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
   metric_name         = "Requests"  # The metric name for an ELB request count
   namespace           = "AWS/ELB"       # The default namespace for ELB metrics
   period              = 60              # 1-minute period
-  statistic           = "SampleCount"
+  statistic           = "Sum"
   threshold           = 10
   alarm_description   = "Scale up when requests exceed 10 per minute"
   actions_enabled     = true
