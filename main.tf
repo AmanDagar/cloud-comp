@@ -189,7 +189,7 @@ resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   metric_name         = "RequestCount"  # The metric name for an ELB request count
-  namespace           = "AWS/ELB"       # The default namespace for ELB metrics
+  namespace           = "AWS/ApplicationELB"       # The default namespace for ELB metrics
   period              = 60              # 1-minute period
   statistic           = "Sum"
   threshold           = 10
@@ -197,7 +197,7 @@ resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
   actions_enabled     = true
   alarm_actions       = [aws_autoscaling_policy.scale_up_policy.arn]
   dimensions = {
-    LoadBalancer      = aws_lb.flask_app_lb.arn
+    LoadBalancer      = element(split("loadbalancer/", aws_lb.flask_app_lb.arn), 1)
   }
 }
 
