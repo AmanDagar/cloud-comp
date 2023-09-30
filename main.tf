@@ -185,7 +185,7 @@ resource "aws_lb_listener_rule" "flask_app" {
 
 # Setting up autoscaling alaram
 resource "aws_cloudwatch_metric_alarm" "requests_up_alarm" {
-  alarm_name          = "requests-alarm"
+  alarm_name          = "requests-up-alarm"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   metric_name         = "RequestCount"  # The metric name for an ELB request count
@@ -202,7 +202,7 @@ resource "aws_cloudwatch_metric_alarm" "requests_up_alarm" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "requests_down_alarm" {
-  alarm_name          = "requests-alarm"
+  alarm_name          = "requests-down-alarm"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = 1
   metric_name         = "RequestCount"  # The metric name for an ELB request count
