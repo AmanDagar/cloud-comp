@@ -9,6 +9,8 @@ WORKDIR /users
 
 COPY . /users
 
+RUN pip3 install boto3
+
 RUN pip3 install Flask
 
 RUN pip3 install Flask-Cors
@@ -16,6 +18,8 @@ RUN pip3 install Flask-Cors
 RUN pip3 install requests
 
 EXPOSE 80
+
+ENV DYNAMODB_TABLE_NAME="FlaskAppTable"
 
 ENTRYPOINT ["python3"]
 

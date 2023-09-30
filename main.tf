@@ -69,6 +69,40 @@ resource "aws_security_group" "flask_app_sg" {
   }
 }
 
+# Define an IAM instance profile
+resource "aws_iam_instance_profile" "flask_app_instance_profile" {
+  name = "FlaskAppInstanceProfile"
+
+  roles = [aws_iam_role.flask_app_role.name]
+}
+
+# Define an IAM role
+resource "aws_iam_role" "flask_app_role" {
+  name = "FlaskAppRole"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+# Attach a policy to the IAM role (grant necessary permissions for your use case)
+resource "aws_iam_policy_attachment" "flask_app_policy_attachment" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"  # Example policy, replace with your policy ARN
+  role       = aws_iam_role.flask_app_role.name
+}
+
+
 # standalone instance for testing (not part of autoscaling group)
 resource "aws_instance" "flask_app" {
   ami           = "ami-0261755bbcb8c4a84" # Ubuntu 20.04 LTS image in us-east-1
@@ -87,7 +121,7 @@ resource "aws_instance" "flask_app" {
               usermod -aG docker ubuntu
 
               # Fetch your Flask app code
-              git clone https://github.com/KeshavUpadhyaya/cloud-comp.git /home/ubuntu/flask-app
+              git clone https://github.com/AmanDagar/cloud-comp.git /home/ubuntu/flask-app
 
               # Build and run the Flask app Docker container
               cd /home/ubuntu/flask-app
@@ -113,6 +147,7 @@ resource "aws_launch_configuration" "flask_app" {
   name_prefix                 = "flask-app-"
   image_id                    = "ami-0261755bbcb8c4a84"
   instance_type               = "t2.micro"
+  iam_instance_profile        = aws_iam_instance_profile.flask_app_instance_profile.name
   key_name                    = aws_key_pair.flask_app_keypair.key_name
   associate_public_ip_address = true
   security_groups             = [aws_security_group.flask_app_sg.id]
@@ -124,7 +159,7 @@ resource "aws_launch_configuration" "flask_app" {
               usermod -aG docker ubuntu
 
               # Fetch your Flask app code
-              git clone https://github.com/KeshavUpadhyaya/cloud-comp.git /home/ubuntu/flask-app
+              git clone https://github.com/AmanDagar/cloud-comp.git /home/ubuntu/flask-app
 
               # Build and run the Flask app Docker container
               cd /home/ubuntu/flask-app
@@ -234,66 +269,18 @@ resource "aws_autoscaling_policy" "scale_down_policy" {
   autoscaling_group_name = aws_autoscaling_group.flask_app_asg.name
 }
 
-
-resource "aws_s3_bucket" "flask_bucket" {
-  bucket = "s3-bucket-flask-app"  # Change to your desired bucket name
-  
-}
-
-resource "aws_s3_bucket_ownership_controls" "flask_bucket" {
-  bucket = aws_s3_bucket.flask_bucket.id
-  rule {
-    object_ownership = "BucketOwnerPreferred"
+# Define an Amazon DynamoDB table.
+resource "aws_dynamodb_table" "flask_app_db" {
+  name           = "FlaskAppTable"
+  billing_mode   = "PAY_PER_REQUEST" 
+  hash_key       = "username"
+  read_capacity  = 5  
+  write_capacity = 5
+  attribute {
+    name = "username"
+    type = "S"
   }
 }
-
-resource "aws_s3_bucket_acl" "flask_bucket" {
-  depends_on = [
-    aws_s3_bucket_ownership_controls.flask_bucket,
-    aws_s3_bucket_public_access_block.access_block,
-    ]
-
-  bucket = aws_s3_bucket.flask_bucket.id
-  acl    = "public-read-write"
-}
-
-resource "aws_s3_bucket_public_access_block" "access_block" {
-  bucket = aws_s3_bucket.flask_bucket.id
-
-  block_public_acls   = false
-  block_public_policy = false
-  ignore_public_acls  = false
-  restrict_public_buckets = false
-}
-
-
-resource "aws_s3_object" "flask_bucket" {
-  bucket = aws_s3_bucket.flask_bucket.bucket
-  key    = "users-db"  # Name of the file in the bucket
-  source = "./users.db"  # Local path to the user.db file
-}
-
-resource "aws_s3_bucket_cors_configuration" "flask_bucket" {
-  bucket = aws_s3_bucket.flask_bucket.id
-
-  cors_rule {
-    allowed_headers = ["*"]
-    allowed_methods = ["PUT", "POST","GET", "DELETE"]
-    allowed_origins = ["*"]
-    expose_headers  = ["ETag"]
-    max_age_seconds = 3000
-  }
-
-  cors_rule {
-    allowed_methods = ["GET"]
-    allowed_origins = ["*"]
-  }
-}
-
-output "bucket_url" {
-  value = aws_s3_bucket.flask_bucket.bucket_domain_name
-}
-
 
 output "load_balancer_public_ip" {
   value = aws_lb.flask_app_lb.dns_name
