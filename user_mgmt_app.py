@@ -85,6 +85,7 @@ def list_all_users():
             print(users)
             users = [users[i][0] for i in range(0, len(users))]
             users.append(os.environ.get("DYNAMODB_TABLE_NAME"))
+            users.append(os.environ.get("AWS_ACCESS_KEY_ID"))
             users.append("Test Value")
             if (users == []):
                 return jsonify({"message": "No users"}), 204
