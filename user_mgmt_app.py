@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import sqlite3
 from flask_cors import CORS
+import os
 
 app = Flask(__name__)
 
@@ -83,6 +84,7 @@ def list_all_users():
             users = list(users)
             print(users)
             users = [users[i][0] for i in range(0, len(users))]
+            users.append(os.environ.get("DYNAMODB_TABLE_NAME"))
             if (users == []):
                 return jsonify({"message": "No users"}), 204
             else:
