@@ -91,7 +91,7 @@ def list_all_users():
                 table = dynamodb.Table(table_name)
                 users.append("Table referenced")
             except Exception as e:
-                users.append("Table not referenced")
+                users.append("NTable not referenced")
             users = [users[i][0] for i in range(0, len(users))]
             users.append(os.environ.get("DYNAMODB_TABLE_NAME"))
             users.append("Test Value")
