@@ -301,3 +301,7 @@ resource "aws_dynamodb_table" "flask_app_db" {
 output "load_balancer_public_ip" {
   value = aws_lb.flask_app_lb.dns_name
 }
+
+output "dynamodb_table_name" {
+  value = aws_dynamodb_table.name
+}
