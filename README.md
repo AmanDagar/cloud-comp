@@ -49,7 +49,18 @@ The app allows you to manage user accounts.
   - No Content (204): No users exist.
   - Method Not Allowed (405).
 
-### 4. Home
+### 4. List Dynamo Db Users
+
+- **Endpoint:** `/api/v1/users/dynamo`
+- **HTTP Method:** GET
+- **Description:** List all users.
+- **Request Parameters:** None
+- **Response:**
+  - Success (200): List of usernames.
+  - No Content (204): No users exist.
+  - Method Not Allowed (405).  
+
+### 5. Home
 
 - **Endpoint:** `/`
 - **HTTP Method:** GET
