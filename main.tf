@@ -188,16 +188,16 @@ resource "aws_cloudwatch_metric_alarm" "requests_up_alarm" {
   alarm_name          = "requests-up-alarm"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 3
-  metric_name         = "RequestCount"  # The metric name for an ELB request count
-  namespace           = "AWS/ApplicationELB"       # The default namespace for ELB metrics
-  period              = 60              # 1-minute period
+  metric_name         = "RequestCount"       # The metric name for an ELB request count
+  namespace           = "AWS/ApplicationELB" # The default namespace for ELB metrics
+  period              = 60                   # 1-minute period
   statistic           = "Sum"
   threshold           = 10
-  alarm_description   = "Scale up when requests exceed 10 per minute"
+  alarm_description   = "Scale up when requests exceed 10 per minute for 1 minute"
   actions_enabled     = true
   alarm_actions       = [aws_autoscaling_policy.scale_up_policy.arn]
   dimensions = {
-    LoadBalancer      = element(split("loadbalancer/", aws_lb.flask_app_lb.arn), 1)
+    LoadBalancer = element(split("loadbalancer/", aws_lb.flask_app_lb.arn), 1)
   }
 }
 
@@ -205,16 +205,16 @@ resource "aws_cloudwatch_metric_alarm" "requests_down_alarm" {
   alarm_name          = "requests-down-alarm"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = 3
-  metric_name         = "RequestCount"  # The metric name for an ELB request count
-  namespace           = "AWS/ApplicationELB"       # The default namespace for ELB metrics
-  period              = 60              # 1-minute period
+  metric_name         = "RequestCount"       # The metric name for an ELB request count
+  namespace           = "AWS/ApplicationELB" # The default namespace for ELB metrics
+  period              = 60                   # 1-minute period
   statistic           = "Sum"
   threshold           = 10
-  alarm_description   = "Scale up when requests exceed 10 per minute"
+  alarm_description   = "Scale down when requests go below 10 per minute for 1 minute"
   actions_enabled     = true
   alarm_actions       = [aws_autoscaling_policy.scale_down_policy.arn]
   dimensions = {
-    LoadBalancer      = element(split("loadbalancer/", aws_lb.flask_app_lb.arn), 1)
+    LoadBalancer = element(split("loadbalancer/", aws_lb.flask_app_lb.arn), 1)
   }
 }
 
@@ -234,9 +234,67 @@ resource "aws_autoscaling_policy" "scale_down_policy" {
   autoscaling_group_name = aws_autoscaling_group.flask_app_asg.name
 }
 
-output "load_balancer_public_ip" {
-  value = aws_lb.flask_app_lb.dns_name
+
+resource "aws_s3_bucket" "flask_bucket" {
+  bucket = "s3-bucket-flask-app"  # Change to your desired bucket name
+  
+}
+
+resource "aws_s3_bucket_ownership_controls" "flask_bucket" {
+  bucket = aws_s3_bucket.flask_bucket.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "flask_bucket" {
+  depends_on = [
+    aws_s3_bucket_ownership_controls.flask_bucket,
+    aws_s3_bucket_public_access_block.access_block,
+    ]
+
+  bucket = aws_s3_bucket.flask_bucket.id
+  acl    = "public-read-write"
+}
+
+resource "aws_s3_bucket_public_access_block" "access_block" {
+  bucket = aws_s3_bucket.flask_bucket.id
+
+  block_public_acls   = false
+  block_public_policy = false
+  ignore_public_acls  = false
+  restrict_public_buckets = false
 }
 
 
+resource "aws_s3_object" "flask_bucket" {
+  bucket = aws_s3_bucket.flask_bucket.bucket
+  key    = "users-db"  # Name of the file in the bucket
+  source = "./users.db"  # Local path to the user.db file
+}
 
+resource "aws_s3_bucket_cors_configuration" "flask_bucket" {
+  bucket = aws_s3_bucket.flask_bucket.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT", "POST","GET", "DELETE"]
+    allowed_origins = ["*"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+
+  cors_rule {
+    allowed_methods = ["GET"]
+    allowed_origins = ["*"]
+  }
+}
+
+output "bucket_url" {
+  value = aws_s3_bucket.flask_bucket.bucket_domain_name
+}
+
+
+output "load_balancer_public_ip" {
+  value = aws_lb.flask_app_lb.dns_name
+}
