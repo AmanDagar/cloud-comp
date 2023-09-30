@@ -195,7 +195,6 @@ resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
   threshold           = "10"
   alarm_description   = "Scale up when requests exceed 10 per minute"
   actions_enabled     = "true"
-  statistic           = "Average"
   alarm_actions       = [aws_autoscaling_policy.scale_up_policy.arn]
   dimensions = {
     AutoScalingGroupName  = aws_autoscaling_group.flask_app_asg.name
