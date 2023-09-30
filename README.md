@@ -14,7 +14,7 @@ Make sure you've installed terraform and you've copied the AWS CLI credentials t
 
 
 
-Steps to run:
+## Steps to run:
 - `terraform init`
 - `terraform apply`
 - `terraform destroy` (to destroy the resources provisioned)
