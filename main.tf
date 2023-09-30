@@ -69,16 +69,10 @@ resource "aws_security_group" "flask_app_sg" {
   }
 }
 
-# Define an IAM instance profile
-resource "aws_iam_instance_profile" "flask_app_instance_profile" {
-  name = "FlaskAppInstanceProfile"
-
-  roles = [aws_iam_role.flask_app_role.name]
-}
-
 # Define an IAM role
 resource "aws_iam_role" "flask_app_role" {
   name = "FlaskAppRole"
+
   inline_policy {
     name = "elb-policy"
     policy = jsonencode({
@@ -96,6 +90,7 @@ resource "aws_iam_role" "flask_app_role" {
       ],
     })
   }
+
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -112,10 +107,31 @@ resource "aws_iam_role" "flask_app_role" {
 EOF
 }
 
-# Attach a policy to the IAM role (grant necessary permissions for your use case)
-resource "aws_iam_policy_attachment" "flask_app_policy_attachment" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"  # Example policy, replace with your policy ARN
-  role       = aws_iam_role.flask_app_role.name
+# Define an IAM instance profile
+resource "aws_iam_instance_profile" "flask_app_instance_profile" {
+  name = "FlaskAppInstanceProfile"
+
+  role = "${aws_iam_role.flask_app_role.id}"
+}
+
+resource "aws_iam_role_policy" "flask_app_policy" {
+  name = "FlaskAppPolicy"
+  role = "${aws_iam_role.flask_app_role.id}"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "s3:*"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
+EOF
 }
 
 
@@ -300,8 +316,4 @@ resource "aws_dynamodb_table" "flask_app_db" {
 
 output "load_balancer_public_ip" {
   value = aws_lb.flask_app_lb.dns_name
-}
-
-output "dynamodb_table_name" {
-  value = aws_dynamodb_table.name
 }
