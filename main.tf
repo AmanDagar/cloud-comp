@@ -194,6 +194,7 @@ resource "aws_launch_configuration" "flask_app" {
               git clone https://github.com/AmanDagar/cloud-comp.git /home/ubuntu/flask-app
 
               # Build and run the Flask app Docker container
+              docker run -v ~/.aws:/home/myapp/.aws -p 8080:8080 -it "image_x"
               cd /home/ubuntu/flask-app
               docker build -t flask-app .
               docker run -d -p 80:80 flask-app
