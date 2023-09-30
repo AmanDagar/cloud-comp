@@ -23,7 +23,7 @@ data "aws_subnets" "selected_subnet" {
 
   filter {
     name   = "availability-zone"
-    values = ["us-east-1a", "us-east-1b"]
+    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"]
   }
 }
 
@@ -102,7 +102,7 @@ resource "aws_autoscaling_group" "flask_app_asg" {
   min_size             = 2
   max_size             = 5
   desired_capacity     = 2
-  availability_zones   = ["us-east-1a", "us-east-1b"]
+  availability_zones   = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"]
   launch_configuration = aws_launch_configuration.flask_app.name
   target_group_arns    = [aws_lb_target_group.flask_app.arn]
   health_check_type    = "ELB"
@@ -186,17 +186,19 @@ resource "aws_lb_listener_rule" "flask_app" {
 # Setting up autoscaling alaram
 resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
   alarm_name          = "requests-alarm"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "2"
   metric_name         = "Requests" # Replace with your custom metric name
   namespace           = "Requests" # Replace with your custom namespace
-  period              = 60         # 1-minute period
+  period              = "60"         # 1-minute period
   statistic           = "SampleCount"
-  threshold           = 10
+  threshold           = "10"
   alarm_description   = "Scale up when requests exceed 10 per minute"
+  actions_enabled     = "true"
+  statistic           = "Average"
   alarm_actions       = [aws_autoscaling_policy.scale_up_policy.arn]
   dimensions = {
-    YourDimensionName = "count" # Replace with your dimension name and value
+    AutoScalingGroupName  = aws_autoscaling_group.flask_app_asg.name
   }
 }
 
