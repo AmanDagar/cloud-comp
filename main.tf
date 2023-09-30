@@ -136,7 +136,6 @@ resource "aws_launch_configuration" "flask_app" {
 # Define a load balancer.
 resource "aws_lb" "flask_app_lb" {
   name                       = "flask-app-lb"
-  namespace                  = "AWS/ELB"
   internal                   = false
   load_balancer_type         = "application"
   security_groups            = [aws_security_group.flask_app_sg.id]
