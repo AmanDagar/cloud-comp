@@ -85,7 +85,7 @@ def list_all_users():
             users = list(users)
             print(users)
             try:
-                dynamodb = boto3.resource('dynamodb')
+                dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
                 table_name = 'FlaskAppTable'
                 # Get a reference to the DynamoDB table
                 table = dynamodb.Table(table_name)
