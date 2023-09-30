@@ -79,7 +79,23 @@ resource "aws_iam_instance_profile" "flask_app_instance_profile" {
 # Define an IAM role
 resource "aws_iam_role" "flask_app_role" {
   name = "FlaskAppRole"
-
+  inline_policy {
+    name = "elb-policy"
+    policy = jsonencode({
+      Version = "2012-10-17",
+      Statement = [
+        {
+          Action = [
+            "elasticloadbalancing:RegisterTargets",
+            "elasticloadbalancing:DeregisterTargets",
+            "elasticloadbalancing:Describe*",
+          ],
+          Effect   = "Allow",
+          Resource = "*",
+        },
+      ],
+    })
+  }
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
