@@ -187,14 +187,14 @@ resource "aws_lb_listener_rule" "flask_app" {
 resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
   alarm_name          = "requests-alarm"
   comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "2"
+  evaluation_periods  = 1
   metric_name         = "Requests" # Replace with your custom metric name
   namespace           = "Requests" # Replace with your custom namespace
-  period              = "60"         # 1-minute period
+  period              = 60         # 1-minute period
   statistic           = "SampleCount"
-  threshold           = "10"
+  threshold           = 10
   alarm_description   = "Scale up when requests exceed 10 per minute"
-  actions_enabled     = "true"
+  actions_enabled     = true
   alarm_actions       = [aws_autoscaling_policy.scale_up_policy.arn]
   dimensions = {
     AutoScalingGroupName  = aws_autoscaling_group.flask_app_asg.name
