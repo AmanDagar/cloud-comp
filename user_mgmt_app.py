@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import sqlite3
 from flask_cors import CORS
 import os
+import boto3
 
 app = Flask(__name__)
 
@@ -83,6 +84,14 @@ def list_all_users():
             users = cursor.execute("select Username from User")
             users = list(users)
             print(users)
+            dynamodb = boto3.resource('dynamodb')
+            table_name = 'FlaskAppTable'
+            try:
+                # Get a reference to the DynamoDB table
+                table = dynamodb.Table(table_name)
+                users.append("Table referenced")
+            except Exception as e:
+                users.append("Table not referenced")
             users = [users[i][0] for i in range(0, len(users))]
             users.append(os.environ.get("DYNAMODB_TABLE_NAME"))
             users.append(os.environ.get("AWS_ACCESS_KEY_ID"))
