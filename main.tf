@@ -124,7 +124,7 @@ resource "aws_iam_role_policy" "flask_app_policy" {
   "Statement": [
     {
       "Action": [
-        "s3:*"
+        "dynamodb:*"
       ],
       "Effect": "Allow",
       "Resource": "*"

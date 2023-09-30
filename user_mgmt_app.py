@@ -84,9 +84,9 @@ def list_all_users():
             users = cursor.execute("select Username from User")
             users = list(users)
             print(users)
-            dynamodb = boto3.resource('dynamodb')
-            table_name = 'FlaskAppTable'
             try:
+                dynamodb = boto3.resource('dynamodb')
+                table_name = 'FlaskAppTable'
                 # Get a reference to the DynamoDB table
                 table = dynamodb.Table(table_name)
                 users.append("Table referenced")
@@ -94,7 +94,6 @@ def list_all_users():
                 users.append("Table not referenced")
             users = [users[i][0] for i in range(0, len(users))]
             users.append(os.environ.get("DYNAMODB_TABLE_NAME"))
-            users.append(os.environ.get("AWS_ACCESS_KEY_ID"))
             users.append("Test Value")
             if (users == []):
                 return jsonify({"message": "No users"}), 204
