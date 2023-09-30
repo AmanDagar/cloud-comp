@@ -93,8 +93,6 @@ def list_all_users():
             except Exception as e:
                 users.append("NTable not referenced")
             users = [users[i][0] for i in range(0, len(users))]
-            users.append(os.environ.get("DYNAMODB_TABLE_NAME"))
-            users.append("Test Value")
             if (users == []):
                 return jsonify({"message": "No users"}), 204
             else:
@@ -102,6 +100,29 @@ def list_all_users():
     else:
         return jsonify({"message": "Method not allowed"}), 405
 
+@app.route('/api/v1/users/dynamo', methods=['GET'])
+def list_users():
+    if request.method == 'GET':
+        dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+        table_name = 'FlaskAppTable'
+
+        # Get a reference to the DynamoDB table
+        table = dynamodb.Table(table_name)
+        
+        table.put_item(Item={'username': "A"})
+        table.put_item(Item={'username': "B"})
+        table.put_item(Item={'username': "C"})
+        table.put_item(Item={'username': "D"})
+        table.put_item(Item={'username': "E"})
+
+        response = table.scan(Limit=5)
+
+        users = response.get('Items', [])
+
+        usernames = [user.get('username') for user in users]
+        return jsonify(usernames), 200
+    else:
+        return jsonify({"message": "Method not allowed"}), 405
 
 @app.route('/')
 def home():
