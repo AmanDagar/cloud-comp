@@ -1,113 +1,103 @@
 from flask import Flask, request, jsonify
-import os
-import boto3
-from botocore.exceptions import NoCredentialsError
+import sqlite3
 from flask_cors import CORS
 
 app = Flask(__name__)
 
-# Initialize a DynamoDB client
-dynamodb = boto3.client(
-    'dynamodb',
-    region_name=os.environ.get('AWS_REGION'),
-    aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
-    aws_session_token=os.environ.get('AWS_SESSION_TOKEN')  # Only if you're using temporary credentials
-)
+
+def is_sha1(maybe_sha):
+    if len(maybe_sha) != 40:
+        return False
+    try:
+        sha_int = int(maybe_sha, 16)
+    except ValueError:
+        return False
+    return True
+
 
 app = Flask(__name__)
 api = CORS(app)
 
-# Check if DynamoDB configuration details are available in environment variables
-if not all([os.environ.get('AWS_ACCESS_KEY_ID'), os.environ.get('AWS_SECRET_ACCESS_KEY'), os.environ.get('AWS_REGION')]):
-    raise Exception("DynamoDB configuration details not found in environment variables")
+# 1 Add user--------------------------------------------------------------------
 
-# Define the DynamoDB table name
-dynamodb_table = os.environ.get('DYNAMODB_TABLE_NAME')
 
-# 1. Add user to DynamoDB
 @app.route('/api/v1/users', methods=['POST'])
 def add_user():
-    if request.method == 'POST':
-        if not request.json or not 'username' in request.json or not 'password' in request.json:
-            return jsonify({"message": "username or password missing"}), 400
+    if (request.method == 'POST'):
+        with sqlite3.connect("users.db") as connectionState:
+            cursor = connectionState.cursor()
 
-        username = request.json['username']
-        password = request.json['password']
+            if not request.json or not 'username' in request.json or not 'password' in request.json:
+                return jsonify({"message": "username or password missing"}), 400
 
-        try:
-            # Check if the user already exists in DynamoDB
-            response = dynamodb.get_item(
-                TableName=dynamodb_table,
-                Key={'username': {'S': username}}
-            )
-            if 'Item' in response:
+            username = request.json['username']
+            password = request.json['password']
+
+            users = cursor.execute("select Username from User")
+            users = list(users)
+            users = [users[i][0] for i in range(0, len(users))]
+
+            if username in users:
                 return jsonify({"message": "user {} already exists".format(username)}), 400
-        except Exception as e:
-            return jsonify({"message": "Failed to check user existence: {}".format(str(e))}), 500
 
-        try:
-            # Add user to DynamoDB
-            dynamodb.put_item(
-                TableName=dynamodb_table,
-                Item={
-                    'username': {'S': username},
-                    'password': {'S': password}
-                }
-            )
-            return jsonify({"message": "User {} added".format(username)}), 201
-        except Exception as e:
-            return jsonify({"message": "Failed to add user: {}".format(str(e))}), 500
+            if not is_sha1(request.json['password']):
+                return jsonify({"message": "password not in sha1 format. Enter a proper format"}), 400
+
+            cursor.execute("insert into User values (?, ?)",
+                           (username, password))
+            return jsonify({"message": "User {} added".format(request.json['username'])}), 201
     else:
         return jsonify({"message": "Method not allowed"}), 405
 
-# 2. Remove user from DynamoDB
+# 2 Remove user-----------------------------------------------------------------
+
+
 @app.route('/api/v1/users/<username>', methods=['DELETE'])
 def remove_user(username):
-    if request.method == 'DELETE':
-        try:
-            # Check if the user exists in DynamoDB
-            response = dynamodb.get_item(
-                TableName=dynamodb_table,
-                Key={'username': {'S': username}}
-            )
-            if 'Item' not in response:
-                return jsonify({"message": "User not found"}), 404
-        except Exception as e:
-            return jsonify({"message": "Failed to check user existence: {}".format(str(e))}), 500
-
-        try:
-            # Remove user from DynamoDB
-            dynamodb.delete_item(
-                TableName=dynamodb_table,
-                Key={'username': {'S': username}}
-            )
-            return jsonify({"message": "User {} removed".format(username)}), 200
-        except Exception as e:
-            return jsonify({"message": "Failed to remove user: {}".format(str(e))}), 500
+    if (request.method == 'DELETE'):
+        with sqlite3.connect("users.db") as connectionState:
+            cursor = connectionState.cursor()
+            users = cursor.execute("select Username from User")
+            users = list(users)
+            print(username)
+            print(users)
+            users = [users[i][0] for i in range(0, len(users))]
+            if username in users:
+                cursor.execute(
+                    "delete from User where Username=(?)", (username,))
+                return jsonify({"message": "user {} removed".format(username)}), 200
+            else:
+                return jsonify({"message": "User doesn't exist"}), 400
     else:
         return jsonify({"message": "Method not allowed"}), 405
 
-# 3. List all users from DynamoDB
+# 3 List all users--------------------------------------------------------------
+
+
 @app.route('/api/v1/users', methods=['GET'])
 def list_all_users():
-    if request.method == 'GET':
-        try:
-            # Scan the DynamoDB table to list all users
-            response = dynamodb.scan(
-                TableName=dynamodb_table,
-                ProjectionExpression='username'
-            )
-            users = [item['username']['S'] for item in response.get('Items', [])]
-            return jsonify(users), 200
-        except Exception as e:
-            return jsonify({"message": "Failed to list users: {}".format(str(e))}), 500
+    if (request.method == 'GET'):
+        with sqlite3.connect("users.db") as connectionState:
+            cursor = connectionState.cursor()
+            users = cursor.execute("select Username from User")
+            users = list(users)
+            print(users)
+            users = [users[i][0] for i in range(0, len(users))]
+            if (users == []):
+                return jsonify({"message": "No users"}), 204
+            else:
+                return jsonify(users), 200
     else:
         return jsonify({"message": "Method not allowed"}), 405
+
 
 @app.route('/')
 def home():
-    return "User account management app is working! Owner: CloudComp2"
+    return '''<p> User account management app is working! Owner: CloudComp2 </p>
+    <p> Please check the <a target="_blank" href="https://github.com/KeshavUpadhyaya/cloud-comp/blob/main/README.md">README</a> for API documentation. </p>
+    '''
+
 
 if __name__ == '__main__':
+    # app.run(debug=True,port=8000)
     app.run(host="0.0.0.0", port=80)

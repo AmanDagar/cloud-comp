@@ -304,7 +304,7 @@ resource "aws_autoscaling_policy" "scale_down_policy" {
 # Define an Amazon DynamoDB table.
 resource "aws_dynamodb_table" "flask_app_db" {
   name           = "FlaskAppTable"
-  billing_mode   = "PAY_PER_REQUEST" 
+  billing_mode   = "PROVISIONED" 
   hash_key       = "username"
   read_capacity  = 5  
   write_capacity = 5
