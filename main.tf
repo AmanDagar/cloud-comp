@@ -191,7 +191,7 @@ resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
   metric_name         = "RequestCount"  # The metric name for an ELB request count
   namespace           = "AWS/ApplicationELB"       # The default namespace for ELB metrics
   period              = 60              # 1-minute period
-  statistic           = "Sum"
+  statistic           = "Average"
   threshold           = 10
   alarm_description   = "Scale up when requests exceed 10 per minute"
   actions_enabled     = true
@@ -201,9 +201,34 @@ resource "aws_cloudwatch_metric_alarm" "requests_alarm" {
   }
 }
 
+resource "aws_cloudwatch_metric_alarm" "requests_alarm2" {
+  alarm_name          = "requests-alarm"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "RequestCount"  # The metric name for an ELB request count
+  namespace           = "AWS/ApplicationELB"       # The default namespace for ELB metrics
+  period              = 60              # 1-minute period
+  statistic           = "Average"
+  threshold           = 10
+  alarm_description   = "Scale up when requests exceed 10 per minute"
+  actions_enabled     = true
+  alarm_actions       = [aws_autoscaling_policy.scale_down_policy.arn]
+  dimensions = {
+    LoadBalancer      = element(split("loadbalancer/", aws_lb.flask_app_lb.arn), 1)
+  }
+}
+
 resource "aws_autoscaling_policy" "scale_up_policy" {
   name                   = "scale-up-policy"
   scaling_adjustment     = 1 # Increase desired capacity by 1 instance/container
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300 # Cooldown period in seconds
+  autoscaling_group_name = aws_autoscaling_group.flask_app_asg.name
+}
+
+resource "aws_autoscaling_policy" "scale_down_policy" {
+  name                   = "scale-down-policy"
+  scaling_adjustment     = -1 # Increase desired capacity by 1 instance/container
   adjustment_type        = "ChangeInCapacity"
   cooldown               = 300 # Cooldown period in seconds
   autoscaling_group_name = aws_autoscaling_group.flask_app_asg.name
